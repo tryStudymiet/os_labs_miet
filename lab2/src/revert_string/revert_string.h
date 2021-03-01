@@ -1,4 +1,4 @@
 
-/* function to revert string */
+#include <string.h>
 void RevertString(char *str);
 
