@@ -1,0 +1,6 @@
+#!/bin/bash
+echo "Current path: "
+echo $PWD
+echo "Current date: "
+echo $(date)
+echo $PATH
