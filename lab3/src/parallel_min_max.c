@@ -40,18 +40,20 @@ int main(int argc, char **argv) {
         switch (option_index) {
           case 0:
             seed = atoi(optarg);
-            // your code here
-            // error handling
+            if (seed <= 0)
+            	printf("Error: Seed not received or negative.");
             break;
           case 1:
             array_size = atoi(optarg);
-            // your code here
-            // error handling
+            if (array_size <= 0)
+            	printf("Error: array_size variable must be a positive number.");
             break;
           case 2:
             pnum = atoi(optarg);
-            // your code here
-            // error handling
+            if (array_size <= 0)
+            	printf("Error: pnum variable must be a positive number.");
+            break;
+        
             break;
           case 3:
             with_files = true;
@@ -73,7 +75,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (optind < argc) {
+  if (optind < argc-1) {
     printf("Has at least one no option argument\n");
     return 1;
   }
@@ -90,6 +92,21 @@ int main(int argc, char **argv) {
 
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
+  //For one thread processing.
+  int processing_len = (pnum < array_size)? (array_size/pnum ) : 1;
+
+  //Preparing bytes transfer.
+  int pipe_entered_points[2];
+  FILE* shared_file;
+  if(with_files){
+    shared_file = fopen("lab3_file", "w+"); //Create or rewrite.
+  }
+  else if (pipe(pipe_entered_points) == -1){
+    //If we don't have a file flag and pipes.
+    printf("Error: Output place are incorrect (pipes of file flag require).");
+    return -1;
+  }
+
 
   for (int i = 0; i < pnum; i++) {
     pid_t child_pid = fork();
@@ -98,13 +115,19 @@ int main(int argc, char **argv) {
       active_child_processes += 1;
       if (child_pid == 0) {
         // child process
-
         // parallel somehow
+        unsigned int begin = processing_len * (active_child_processes-1);
+        begin = (begin >= array_size)? (array_size-1): begin;
+        unsigned int end = processing_len * active_child_processes;
+        end = (end >= array_size)? (array_size) : end; 
+        struct MinMax curr_min_max = GetMinMax(array, begin, end);
 
         if (with_files) {
           // use files here
+          fwrite(&curr_min_max, sizeof(struct MinMax), 1, shared_file);
         } else {
           // use pipe here
+          write(pipe_entered_points[1], &curr_min_max, sizeof(struct MinMax));
         }
         return 0;
       }
@@ -117,11 +140,12 @@ int main(int argc, char **argv) {
 
   while (active_child_processes > 0) {
     // your code here
-
+    wait(NULL);// wait childs processings.
     active_child_processes -= 1;
   }
+  //End childs processings.
 
-  struct MinMax min_max;
+  struct MinMax min_max, tmp_minmax;
   min_max.min = INT_MAX;
   min_max.max = INT_MIN;
 
@@ -131,9 +155,15 @@ int main(int argc, char **argv) {
 
     if (with_files) {
       // read from files
+      fclose(shared_file);
+      shared_file = fopen("lab3_file", "r");
+      fread(&tmp_minmax, sizeof(struct MinMax), 1, shared_file);
     } else {
       // read from pipes
+      read(pipe_entered_points[0], &tmp_minmax, sizeof(struct MinMax));
     }
+
+    min = tmp_minmax.min; max = tmp_minmax.max;
 
     if (min < min_max.min) min_max.min = min;
     if (max > min_max.max) min_max.max = max;
