@@ -28,7 +28,8 @@ int main(int argc, char **argv) {
                                       {"array_size", required_argument, 0, 0},
                                       {"pnum", required_argument, 0, 0},
                                       {"by_files", no_argument, 0, 'f'},
-                                      {0, 0, 0, 0}};
+                                      {0, 0, 0, 0}
+                                      };
 
     int option_index = 0;
     int c = getopt_long(argc, argv, "f", options, &option_index);

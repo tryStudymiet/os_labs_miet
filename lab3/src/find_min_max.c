@@ -14,5 +14,5 @@ struct MinMax GetMinMax(int *array, unsigned int begin, unsigned int end) {
         if(item < min_max.min)
             min_max.min = item;
     }
-  return min_max;
+    return min_max;
 }

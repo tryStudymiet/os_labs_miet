@@ -8,5 +8,7 @@ void RevertString(char *str)
 		str[i] = str[size-i-1];
 		str[size-i-1] = tmp;
 	}
+
+    printf("Changes in dynamic lib!");
 }
 
