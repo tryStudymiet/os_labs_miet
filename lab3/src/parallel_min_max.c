@@ -97,18 +97,25 @@ int main(int argc, char **argv) {
   int processing_len = (pnum < array_size)? (array_size/pnum ) : 1;
 
   //Preparing bytes transfer.
-  int pipe_entered_points[2];
+  int** pipe_entered_points = (int**)malloc(sizeof(int*) * pnum);
+  int u;
+  for( u = 0; u < pnum; ++u){
+      pipe_entered_points[u] = (int*)malloc(sizeof(int) * 2);
+  }
   FILE* shared_file;
   if(with_files){
     shared_file = fopen("lab3_file", "w+"); //Create or rewrite.
   }
-  else if (pipe(pipe_entered_points) == -1){
-    //If we don't have a file flag and pipes.
-    printf("Error: Output place are incorrect (pipes of file flag require).");
-    return -1;
+  else {
+    for( u = 0; u < pnum; ++u)
+        if (pipe(pipe_entered_points[u]) == -1){
+            //If we don't have a file flag and pipes.
+            printf("Error: Output place are incorrect (pipes of file flag require).");
+            return -1;
+        }
   }
 
-
+    u = 0;
   for (int i = 0; i < pnum; i++) {
     pid_t child_pid = fork();
     if (child_pid >= 0) {
@@ -128,7 +135,7 @@ int main(int argc, char **argv) {
           fwrite(&curr_min_max, sizeof(struct MinMax), 1, shared_file);
         } else {
           // use pipe here
-          write(pipe_entered_points[1], &curr_min_max, sizeof(struct MinMax));
+          write(pipe_entered_points[u++][1], &curr_min_max, sizeof(struct MinMax));
         }
         return 0;
       }
@@ -161,7 +168,8 @@ int main(int argc, char **argv) {
       fread(&tmp_minmax, sizeof(struct MinMax), 1, shared_file);
     } else {
       // read from pipes
-      read(pipe_entered_points[0], &tmp_minmax, sizeof(struct MinMax));
+      int pIDX = 0;
+      read(pipe_entered_points[pIDX++][0], &tmp_minmax, sizeof(struct MinMax));
     }
 
     min = tmp_minmax.min; max = tmp_minmax.max;
@@ -169,6 +177,7 @@ int main(int argc, char **argv) {
     if (min < min_max.min) min_max.min = min;
     if (max > min_max.max) min_max.max = max;
   }
+  fclose(shared_file);
 
   struct timeval finish_time;
   gettimeofday(&finish_time, NULL);
@@ -177,6 +186,9 @@ int main(int argc, char **argv) {
   elapsed_time += (finish_time.tv_usec - start_time.tv_usec) / 1000.0;
 
   free(array);
+  u = 0;
+  free(pipe_entered_points[u++]);
+  free(pipe_entered_points);
 
   printf("Min: %d\n", min_max.min);
   printf("Max: %d\n", min_max.max);
