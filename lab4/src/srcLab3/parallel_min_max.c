@@ -16,19 +16,41 @@
 #include "utils.h"
 
 bool is_alarms_times_over = false;
+int pnum = -1;
+pid_t *childrens;
+int active_child_processes = 0;
 
 //Alarm event function.
 void time_out_event(int signal)
 {
-  printf("Timeout!\n");
   is_alarms_times_over = true;
+  printf("Timeout!\n");
+  for (int i = 0; i < pnum; i++)
+  {
+    //Remove process.
+    kill(childrens[i], SIGKILL);
+    //printf("Process %d is free.\n", childrens[i]);
+  }
+  int status;
+  while (active_child_processes > 0)
+  {
+    //Check all childes like zombe or notzombe.
+    //If one of them axist - remove it.
+    pid_t zpid = waitpid(-1, &status, WNOHANG);
+    if (zpid > 0)
+    {
+      active_child_processes -= 1;
+      printf("Process %d is free.\n", zpid);
+    }
+  }
+  printf("\nAll process were slain.\n");
+  exit(0);
 }
 
 int main(int argc, char **argv)
 {
   int seed = -1,
       array_size = -1,
-      pnum = -1,
       timeout = -1;
   bool with_files = false;
 
@@ -108,7 +130,6 @@ int main(int argc, char **argv)
 
   int *array = malloc(sizeof(int) * array_size);
   GenerateArray(array, array_size, seed);
-  int active_child_processes = 0;
 
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
@@ -138,7 +159,7 @@ int main(int argc, char **argv)
     alarm(timeout);
   }
 
-  pid_t *childrens = (pid_t *)calloc(pnum, sizeof(pid_t));
+  childrens = (pid_t *)calloc(pnum, sizeof(pid_t));
 
   for (int i = 0; i < pnum; i++)
   {
@@ -179,27 +200,10 @@ int main(int argc, char **argv)
   }
   //End childs processings.
 
-  int status;
-  //For correct program end.
   while (active_child_processes > 0)
   {
-    if (is_alarms_times_over)
-    {
-      for (int i = 0; i < pnum; i++)
-      {
-        //Remove process.
-        kill(childrens[i], SIGKILL);
-        printf("Process %d is free.\n", childrens[i]);
-      }
-    }
-    //Check all childes like zombe.
-    //If it axist - remove it.
-    if (waitpid(-1, &status, WNOHANG) > 0)
-    {
-      active_child_processes -= 1;
-    }
-    //Wait for end one non-zombee proceses.
-    wait(NULL);
+    // your code here
+    wait(NULL); // wait childs processings.
     active_child_processes -= 1;
   }
 
