@@ -7,15 +7,30 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SERV_PORT 10050
-#define BUFSIZE 100
 #define SADDR struct sockaddr
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  if (argc != 3) {
+    printf("You must use 2 arguments: [server port] [buffersize] \n");
+    exit(1);
+  }
+
+  int i;
+  for(i = 1; i < argc; ++i)
+  {
+    if(atoi(argv[i]) < 1){
+      printf("Args can't be smaller than 1\n");
+      exit(1);
+    }
+  }
+
   const size_t kSize = sizeof(struct sockaddr_in);
 
   int lfd, cfd;
   int nread;
+  int SERV_PORT = atoi(argv[1]);
+  int BUFSIZE = atoi(argv[2]);
   char buf[BUFSIZE];
   struct sockaddr_in servaddr;
   struct sockaddr_in cliaddr;

@@ -9,21 +9,31 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SERV_PORT 20001
-#define BUFSIZE 1024
 #define SADDR struct sockaddr
 #define SLEN sizeof(struct sockaddr_in)
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[]) {
+
+  if (argc != 4) {
+    printf("You must use 3 arguments: [server IP address] [port] [buffersize] \n");
+    exit(1);
+  }
+
+  int i;
+  for(i = 1; i < argc; ++i)
+  {
+    if(atoi(argv[i]) < 1){
+      printf("Args can't be smaller than 1\n");
+      exit(1);
+    }
+  }
+
+  int BUFSIZE = atoi(argv[3]);
+  int SERV_PORT = atoi(argv[2]);
   int sockfd, n;
   char sendline[BUFSIZE], recvline[BUFSIZE + 1];
   struct sockaddr_in servaddr;
   struct sockaddr_in cliaddr;
-
-  if (argc != 2) {
-    printf("usage: client <IPaddress of server>\n");
-    exit(1);
-  }
 
   memset(&servaddr, 0, sizeof(servaddr));
   servaddr.sin_family = AF_INET;
